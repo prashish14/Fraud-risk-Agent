@@ -1,0 +1,5 @@
+# Install with: pip install -e ".[dev]"
+# This file exists for CI and Docker — it pins nothing.
+# For reproducible builds, freeze into requirements.txt with:
+#   pip freeze --exclude-editable > requirements.txt
+-e ".[dev]"

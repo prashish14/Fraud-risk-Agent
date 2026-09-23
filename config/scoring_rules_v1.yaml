@@ -1,0 +1,94 @@
+# Fraud Scoring Rules — v1.0
+# Each signal maps a condition to points. The total is capped at 100.
+# Bands: 0–39 low, 40–69 medium, 70–100 high.
+# The LLM investigator runs only for medium and high.
+
+version: "v1.0"
+
+thresholds:
+  low_max: 39
+  medium_max: 69
+  min_orders_for_rates: 5
+
+signals:
+  # ── Return signals ──────────────────────────────────────────────
+  return_rate_high:
+    description: "Return rate exceeds 2× category baseline"
+    field: return_rate
+    operator: ">"
+    threshold: 2.0       # multiplier of category baseline
+    points: 25
+    requires_min_orders: true
+
+  return_value_ratio_high:
+    description: "High-value items returned disproportionately"
+    field: return_value_ratio
+    operator: ">"
+    threshold: 0.50
+    points: 10
+
+  high_risk_reasons:
+    description: "Multiple empty-box / not-received / failed-inspection claims"
+    field: high_risk_reason_count
+    operator: ">="
+    threshold: 3
+    points: 30
+
+  late_window_returns:
+    description: "Returns clustered at end of return window (wardrobing)"
+    field: late_window_return_count
+    operator: ">="
+    threshold: 2
+    points: 8
+
+  category_adjusted_rate:
+    description: "Return rate high relative to category norm"
+    field: category_adjusted_rate
+    operator: ">"
+    threshold: 2.0       # multiplier of category baseline
+    points: 10
+
+  # ── Cancellation signals ────────────────────────────────────────
+  cancel_rate_high:
+    description: "High cancellation rate"
+    field: cancel_rate
+    operator: ">"
+    threshold: 0.25
+    points: 12
+    requires_min_orders: true
+
+  cancel_after_ship:
+    description: "Multiple cancellations after shipment"
+    field: cancel_after_ship_count
+    operator: ">="
+    threshold: 3
+    points: 20
+
+  promo_cancel_pattern:
+    description: "Promo-qualified orders with filler items cancelled"
+    field: promo_cancel_detected
+    operator: "=="
+    threshold: true
+    points: 20
+
+  cancel_reorder_loop:
+    description: "Same SKU cancelled and reordered repeatedly"
+    field: cancel_reorder_loop_count
+    operator: ">="
+    threshold: 2
+    points: 18
+
+  # ── Identity-linking signals ────────────────────────────────────
+  linked_accounts:
+    description: "Multiple accounts sharing identifiers"
+    field: linked_account_count
+    operator: ">="
+    threshold: 3
+    points: 15
+
+  linked_abuse:
+    description: "Linked account has a high risk score"
+    field: linked_abuse_score
+    operator: ">="
+    threshold: 70
+    points: 25

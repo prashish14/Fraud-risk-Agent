@@ -1,0 +1,38 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: fraud_agent
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-localdev}
+      POSTGRES_DB: fraud_agent
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fraud_agent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FRAUD_DATABASE_URL: "postgresql+asyncpg://fraud_agent:${DB_PASSWORD:-localdev}@db:5432/fraud_agent"
+      REPLICA_DATABASE_URL: "${REPLICA_DATABASE_URL:-postgresql+asyncpg://fraud_agent:localdev@db:5432/fraud_agent}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
+      SCORING_CONFIG_PATH: "config/scoring_rules_v1.yaml"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./src:/app/src
+      - ./config:/app/config
+
+volumes:
+  pgdata:

@@ -1,0 +1,8 @@
+# Override for CI: ephemeral containers, no persistent volumes.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml up -d db
+services:
+  db:
+    ports: []
+    volumes: []
+    tmpfs:
+      - /var/lib/postgresql/data
